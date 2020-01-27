@@ -1,0 +1,5 @@
+Vec3GroupTrajectory obsvs
+int8 n_next
+int8 n_samples
+---
+Vec3GroupTrajectoryArray predss
