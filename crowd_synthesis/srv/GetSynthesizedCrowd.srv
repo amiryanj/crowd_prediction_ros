@@ -1,0 +1,4 @@
+ParticleCrowd detections
+int8 n_samples
+---
+ParticleCrowdArray configs

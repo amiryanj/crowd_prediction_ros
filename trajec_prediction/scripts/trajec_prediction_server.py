@@ -2,26 +2,24 @@
 
 import numpy as np
 import rospy
-from trajec_prediction.srv import GetPredictedTrajectories, GetPredictedTrajectoriesResponse
-from prediction_baselines.const_vel import predict_multiple
+from trajec_prediction.srv import GetSynthesizedCrowd
 from trajec_prediction.msg import Vec3Trajectory, Vec3GroupTrajectory, Vec3GroupTrajectoryArray
-from geometry_msgs.msg import Vector3Stamped
+from geometry_msgs.msg import Vector3
+from std_msgs.msg import Header
 
 
-def handle_prediction_request(req):
+def handle_synthesis_request(req):
     print("Received a Request:", req)
-    res = GetPredictedTrajectoriesResponse()
+    req_detections = req.detections  # N x MovingParticle[p, v, t, id]
+    # n_samples = req.n_samples
+    res = GetSynthesizedCrowdResponse()
 
-    req_obsvs = req.obsvs.trajectories  # N x T x 2
-    N = len(req_obsvs)
+    N = len(req_detections)
+    poss = []
+    vels = []
     if N > 0:
-        T = len(req_obsvs[0].trajectory)
-
-        obsvs_np = np.zeros((N, T, 2), dtype=np.float)
-        for ii in range(len(req_obsvs)):
-            for tt in range(obsvs_np.shape[1]):
-                obsvs_np[ii, tt, 0] = req_obsvs[ii].trajectory[tt].vector.x
-                obsvs_np[ii, tt, 1] = req_obsvs[ii].trajectory[tt].vector.y
+        for ii in range(N):
+            poss.append(req_detections)
 
         preds = predict_multiple(obsvs_np, req.n_next, req.n_samples)  # 1 x N x T x 2
         preds = preds.reshape((req.n_samples, N, req.n_next, 2))
