@@ -2,8 +2,8 @@
 
 import numpy as np
 import rospy
-from trajec_prediction.srv import GetSynthesizedCrowd
 from trajec_prediction.msg import Vec3Trajectory, Vec3GroupTrajectory, Vec3GroupTrajectoryArray
+from trajec_prediction.srv import GetPredictedTrajectories, GetPredictedTrajectoriesResponse
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Header
 

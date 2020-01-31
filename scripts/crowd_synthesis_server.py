@@ -2,7 +2,7 @@
 
 import numpy as np
 import rospy
-from crowd_synthesis.srv import GetPredictedTrajectories, GetPredictedTrajectoriesResponse
+from crowd_synthesis.srv import GetSynthesizedCrowd, GetSynthesizedCrowdResponse
 from crowd_synthesis.msg import MovingParticleStamped, ParticleCrowd, ParticleCrowdArray
 from geometry_msgs.msg import Vector3Stamped
 from crowd_synthesis.crowd_synthesis import CrowdSynthesize
@@ -39,12 +39,12 @@ def handle_synthesis_request(req):
     return res
 
 
-def trajec_prediction_server():
+def crowd_synthesis_server():
     rospy.init_node('trajec_prediction_server')
-    s = rospy.Service('trajec_prediction', GetPredictedTrajectories, handle_prediction_request)
+    s = rospy.Service('crowd_synthesis', GetSynthesizedCrowd, handle_synthesis_request)
     print("Prediction Service is ready")
     rospy.spin()
 
 
 if __name__ == "__main__":
-    trajec_prediction_server()
+    crowd_synthesis_server()

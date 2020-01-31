@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(crowd_synthesis)
+project(crowd_prediction)
 
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
@@ -7,13 +7,15 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-
 catkin_python_setup()
 
 
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
+  Vec3Trajectory.msg
+  Vec3GroupTrajectory.msg
+  Vec3GroupTrajectoryArray.msg
   MovingParticleStamped.msg
   ParticleCrowd.msg
   ParticleCrowdArray.msg
@@ -22,6 +24,7 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
+  GetPredictedTrajectories.srv
   GetSynthesizedCrowd.srv
 )
 
@@ -38,24 +41,17 @@ catkin_package(
   CATKIN_DEPENDS rospy std_msgs geometry_msgs message_runtime 
 )
 
-###########
-## Build ##
-###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
+## Build ##
+
 include_directories(
-# include
-# ${catkin_INCLUDE_DIRS}
+ ${catkin_INCLUDE_DIRS}
 )
 
-#############
-## Install ##
-#############
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+catkin_install_python(PROGRAMS
+			scripts/trajec_prediction_server.py
+			scripts/trajec_prediction_client.py
+			scripts/trajec_prediction_node.py
+			scripts/trajec_prediction_server.py 
+		      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 

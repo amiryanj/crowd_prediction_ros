@@ -1,13 +1,14 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>crowd_synthesis</name>
+  <name>crowd_prediction</name>
   <version>0.0.0</version>
-  <description>The crowd_synthesis package</description>
+  <description>The crowd_prediction package</description>
+
   <maintainer email="amiryan.j@gmail.com">Javad Amirian</maintainer>
   <url type="website">https://github.com/amiryanj/socialways</url>
-
   <license>TODO</license>
-	
+
+
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>message_generation</build_depend>  
   <build_depend>rospy</build_depend>
@@ -21,4 +22,3 @@
 
   <export>  </export>
 </package>
-
