@@ -49,9 +49,9 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS
-			scripts/trajec_prediction_server.py
+			scripts/prediction_node.py
 			scripts/trajec_prediction_client.py
-			scripts/trajec_prediction_node.py
-			scripts/trajec_prediction_server.py 
+			scripts/trajec_prediction_server.py
+			scripts/trajec_prediction_server.py
 		      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
