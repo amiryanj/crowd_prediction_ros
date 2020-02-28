@@ -1,0 +1,6 @@
+Prediction:
+    model: 'const-vel'
+    n_past: 4
+    n_next: 10
+    n_samples: 1
+

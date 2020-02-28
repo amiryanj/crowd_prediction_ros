@@ -1,0 +1,10 @@
+publisher:
+    trajec_pred:
+        topic: /crowd_prediction/trajectories
+        queue_size: 1
+        latch: false
+
+subscriber:
+    tracking:
+        topic: /rwth_tracker/tracked_persons
+        queue_size: 1
