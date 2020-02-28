@@ -21,12 +21,12 @@ def predict_multiple(obsvs, n_next, sub_batches=[], noise=[]):
     :param n_next: number of steps to predict
     :param sub_batches: will be ignored, since interactions will not be taken into account
     :param noise:       will be ignored, since this is a deterministic function
-    :return: (N x n_next x D)
+    :return: preds: (N x n_next x D)
     """
     N, T, D = obsvs.shape[0], obsvs.shape[1], obsvs.shape[2]
     vels = (obsvs[:, -1] - obsvs[:, 0]) / (T-1)
     preds = [vels*i for i in range(1, n_next+1)] + obsvs[:, -1]
-    preds = np.stack(preds)
+    preds = np.transpose(np.stack(preds), axes=(1, 0, 2))
     return preds
 
 

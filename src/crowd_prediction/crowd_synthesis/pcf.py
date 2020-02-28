@@ -7,31 +7,36 @@ from bisect import bisect_left, bisect_right
 
 
 class PcfPattern:
-    def __init__(self, sigma_=0.25, compat_thresh=0.1):
+    def __init__(self, sigma_=0.25, compat_thresh=0.02):
+        self.points = []
         self.pcf_values = []
         self.rad_values = []
         self.get_pcf = []
         self.sigma = sigma_
         self.compat_threshold = compat_thresh
+        self.area_r = lambda r : np.pi * (r + 0.2) ** 2 - np.pi * max((r - 0.2), 0) ** 2
 
-    def update(self, points, rng=np.arange(0.2, 10, 0.05)):
-        N = len(points)
+    def pcf_r(self, dist_matrix, rr):
+        dists_sqr = np.power(dist_matrix - rr, 2)
+        dists_exp = np.exp(-dists_sqr / (self.sigma ** 2)) / (sqrt(np.pi) * self.sigma)
+        area_r = self.area_r(rr)
+        pcf_r = np.sum(dists_exp) / (2 * area_r)  # 2 is there because each dist is repeated twice
+        return pcf_r
+
+    def update(self, points_, rng):
+        self.points = points_
+        N = len(points_)
 
         self.rad_values = rng
         self.pcf_values = np.empty(len(rng), dtype=np.float)
         self.get_pcf = lambda r: self.pcf_values[bisect_right(self.rad_values, r)]
 
-        dists = euclidean_distances(points)
+        # print(len(points_))
+        dists = euclidean_distances(points_)
         dists_wo_diag = dists[~np.eye(N, dtype=bool)].reshape(N, N-1)
-        # return dists
 
         for ii, rr in enumerate(rng):
-            A_r = np.pi * (rr + 0.2) ** 2 - np.pi * max((rr - 0.2), 0) ** 2
-
-            dists_sqr = np.power(dists_wo_diag - rr, 2)
-            dists_exp = np.exp(-dists_sqr / (self.sigma ** 2)) / (sqrt(np.pi) * self.sigma)
-            pcf_r = np.sum(dists_exp) / N**2 / 2. /A_r # because each dist is repeated twice
-
+            pcf_r = self.pcf_r(dists_wo_diag, rr) #/ N ** 2
             self.pcf_values[ii] = pcf_r
 
     def compatible(self, points):
@@ -44,15 +49,56 @@ class PcfPattern:
         dists_wo_diag = dists[~np.eye(N, dtype=bool)].reshape(N, N - 1)
 
         for ii, rr in enumerate(self.rad_values):
-            A_r = np.pi * (rr + 0.2) ** 2 - np.pi * max((rr - 0.2), 0) ** 2
+            pcf_r = self.pcf_r(dists_wo_diag, rr) #/ N ** 2
 
-            dists_sqr = np.power(dists_wo_diag - rr, 2)
-            dists_exp = np.exp(-dists_sqr / (self.sigma ** 2)) / (sqrt(np.pi) * self.sigma)
-            pcf_r = np.sum(dists_exp) / N ** 2 / 2. / A_r  # because each dist is repeated twice
-
-            if pcf_r > self.pcf_values[ii] + self.compat_threshold:
+            if pcf_r > (self.pcf_values[ii] + self.compat_threshold):
                 return False
         return True
+
+    # FIXME: should work now
+    def increment(self, p_new):
+        dists = np.linalg.norm(self.points - p_new, axis=1)
+        for ii, rr in enumerate(self.rad_values):
+            pcf_r = self.pcf_r(dists, rr)  # / N ** 2
+            self.pcf_values[ii] += pcf_r
+        self.points = np.append(self.points, np.array(p_new).reshape(1, 2), axis=0)
+
+    def grad(self, points_old, p_new):
+        dists = np.linalg.norm(points_old - p_new, axis=1)
+        grads = np.zeros((len(self.rad_values), 2), dtype=np.float)
+        for ii, rr in enumerate(self.rad_values):
+            grad_r = np.zeros(2, dtype=np.float)
+            pcf_r_new = self.pcf_r(dists, rr)  # / N ** 2
+            dtor_i = np.power(dists, 2) - rr ** 2
+            for jj, p_old in enumerate(points_old):
+                grad_ij = np.multiply(dtor_i[jj], 2 * (p_new - p_old))
+                grad_r += grad_ij * pcf_r_new / (self.sigma ** 2) * -1
+            grads[ii, :] = grad_r
+
+        # print(grads)
+        return grads
+
+    def check_and_refine(self, points_old, p_new):
+        points_old = np.array(points_old)
+        grads = self.grad(points_old, p_new)
+
+        all_points = np.append(points_old, np.array(p_new).reshape(1, 2), axis=0)
+        N = len(all_points)
+        dists = euclidean_distances(all_points)
+        dists_wo_diag = dists[~np.eye(N, dtype=bool)].reshape(N, N - 1)
+
+        total_grad = np.zeros((2), dtype=np.float)
+        counter = 0
+        for ii, rr in enumerate(self.rad_values):
+            pcf_r_new = self.pcf_r(dists_wo_diag, rr)  # / N ** 2
+            if pcf_r_new > (self.pcf_values[ii] + self.compat_threshold):
+                total_grad += grads[ii]
+                counter += 1
+
+        alpha = 0.01
+        # TODO: clip total_grad
+        total_grad = total_grad / (np.linalg.norm(total_grad) + 1E-12)
+        return p_new + alpha * total_grad / (counter + 1E-12)
 
 
 # ===========================
@@ -119,5 +165,13 @@ if __name__ == '__main__':
     import cv2
     # crowd_by_click()
     pcf_pattern = PcfPattern()
+    points = np.array([[0, 0], [1, 1]], dtype=np.float)
+    p_to_add = np.array([2, 2], dtype=np.float)
+    pcf_pattern.update(points, np.arange(0.2, 5, 0.1))
+    grad_test = pcf_pattern.grad(pcf_pattern.points, p_to_add)
+
+    # TODOL+: check
+    p_to_add_refined = pcf_pattern.check_and_refine(points, p_to_add)
+
 
 
